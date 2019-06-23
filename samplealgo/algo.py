@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 NY = 'America/New_York'
 api = tradeapi.REST(
-    key_id='REPLACEME',
-    secret_key='REPLACEME',
+    key_id='PKNVDTRHJD2SJRNU6MOF',
+    secret_key='96my5ZIi2ugxHUC49ncRarIiCn1HdPLgRDSOsbbc',
     base_url='https://paper-api.alpaca.markets'
 )
 
@@ -48,7 +48,6 @@ def _get_prices(symbols, end_dt, max_workers=5):
         idx += 200
 
     return barset.df
-
 
 def prices(symbols):
     '''Get the map of prices in DataFrame with the symbol name key.'''
@@ -204,15 +203,13 @@ def main():
         clock = api.get_clock()
         now = clock.timestamp
         if clock.is_open and done != now.strftime('%Y-%m-%d'):
-
             price_df = prices(Universe)
             orders = get_orders(api, price_df)
             trade(orders)
-
             # flag it as done so it doesn't work again for the day
             # TODO: this isn't tolerant to process restarts, so this
             # flag should probably be saved on disk
             done = now.strftime('%Y-%m-%d')
             logger.info(f'done for {done}')
 
-        time.sleep(1)
+        time.sleep(4)
