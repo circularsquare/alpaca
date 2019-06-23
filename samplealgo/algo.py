@@ -20,7 +20,6 @@ def _dry_run_submit(*args, **kwargs):
     logging.info(f'submit({args}, {kwargs})')
 # api.submit_order =_dry_run_submit
 
-
 def _get_prices(symbols, end_dt, max_workers=5):
     '''Get the map of DataFrame price data from Alpaca's data API.'''
 
@@ -34,10 +33,8 @@ def _get_prices(symbols, end_dt, max_workers=5):
             'day',
             limit = 50,
             start=start,
-            end=end
-        )
-
-    # The maximum number of symbols we can request at once is 200.
+            end=end)
+    # maximum number of symbols we can request at once is 200.
     barset = None
     idx = 0
     while idx <= len(symbols) - 1:
