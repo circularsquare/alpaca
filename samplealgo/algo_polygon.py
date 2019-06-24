@@ -134,14 +134,6 @@ def get_orders(api, price_map, position_size=100, max_positions=5):
 
 
 def trade(orders, wait=30):
-    '''This is where we actually submit the orders and wait for them to fill.
-    This is an important step since the orders aren't filled atomically,
-    which means if your buys come first with littme cash left in the account,
-    the buy orders will be bounced.  In order to make the transition smooth,
-    we sell first and wait for all the sell orders to fill and then submit
-    buy orders.
-    '''
-
     # process the sell orders first
     sells = [o for o in orders if o['side'] == 'sell']
     for order in sells:

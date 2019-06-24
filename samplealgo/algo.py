@@ -14,6 +14,9 @@ api = tradeapi.REST(
     secret_key='96my5ZIi2ugxHUC49ncRarIiCn1HdPLgRDSOsbbc',
     base_url='https://paper-api.alpaca.markets'
 )
+'''export APCA_API_KEY_ID=PKNVDTRHJD2SJRNU6MOF
+export APCA_API_SECRET_KEY=96my5ZIi2ugxHUC49ncRarIiCn1HdPLgRDSOsbbc
+'''
 
 
 def _dry_run_submit(*args, **kwargs):
@@ -22,11 +25,9 @@ def _dry_run_submit(*args, **kwargs):
 
 def _get_prices(symbols, end_dt, max_workers=5):
     '''Get the map of DataFrame price data from Alpaca's data API.'''
-
     start_dt = end_dt - pd.Timedelta('50 days')
     start = start_dt.strftime('%Y-%m-%d')
     end = end_dt.strftime('%Y-%m-%d')
-
     def get_barset(symbols):
         return api.get_barset(
             symbols,
@@ -43,7 +44,6 @@ def _get_prices(symbols, end_dt, max_workers=5):
         else:
             barset.update(get_barset(symbols[idx:idx+200]))
         idx += 200
-
     return barset.df
 
 def prices(symbols):
@@ -58,8 +58,7 @@ def prices(symbols):
 
 def calc_scores(price_df, dayindex=-1):
     '''Calculate scores based on the indicator and
-    return the sorted result.
-    '''
+    return the sorted result.'''
     diffs = {}
     param = 10
     for symbol in price_df.columns.levels[0]:
@@ -69,9 +68,11 @@ def calc_scores(price_df, dayindex=-1):
         ema = df.close.ewm(span=param).mean()[dayindex]
         last = df.close.values[dayindex]
         diff = (last - ema) / last
-        diffs[symbol] = diff
-
-    return sorted(diffs.items(), key=lambda x: x[1])
+        diffs[symbol] = diff #diffs is dict of symbols to the parameter
+    unsortedSymbols = list(diffs.keys())
+    sortedSymbols = sorted(diffs, key=diffs.get)
+    return sortedSymbols
+        #sorts the parameters with the key of parameter[1]
 
 
 def get_orders(api, price_df, position_size=100, max_positions=5):
@@ -86,7 +87,7 @@ def get_orders(api, price_df, position_size=100, max_positions=5):
     account = api.get_account()
     # take the top one twentieth out of ranking,
     # excluding stocks too expensive to buy a share
-    for symbol, _ in ranked[:len(ranked) // 20]:
+    for symbol in ranked[:len(ranked) // 20]:
         price = float(price_df[symbol].close.values[-1])
         if price > float(account.cash):
             continue
@@ -112,7 +113,6 @@ def get_orders(api, price_df, position_size=100, max_positions=5):
             'side': 'sell',
         })
         logger.info(f'order(sell): {symbol} for {shares}')
-
     # likewise, if the portfoio is missing stocks from the
     # desired portfolio, buy them. We sent a limit for the total
     # position size so that we don't end up holding too many positions.
@@ -134,14 +134,6 @@ def get_orders(api, price_df, position_size=100, max_positions=5):
 
 
 def trade(orders, wait=30):
-    '''This is where we actually submit the orders and wait for them to fill.
-    Waiting is an important step since the orders aren't filled automatically,
-    which means if your buys happen to come before your sells have filled,
-    the buy orders will be bounced. In order to make the transition smooth,
-    we sell first and wait for all the sell orders to fill before submitting
-    our buy orders.
-    '''
-
     # process the sell orders first
     sells = [o for o in orders if o['side'] == 'sell']
     for order in sells:
@@ -192,8 +184,9 @@ def trade(orders, wait=30):
 
 
 def main():
+    print("?")
     done = None
-    logging.info('start running')
+    logger.info(f'start running')
     while True:
         # clock API returns the server time including
         # the boolean flag for market open
@@ -202,11 +195,14 @@ def main():
         if clock.is_open and done != now.strftime('%Y-%m-%d'):
             price_df = prices(Universe)
             orders = get_orders(api, price_df)
-            trade(orders)
+            #trade(orders)
             # flag it as done so it doesn't work again for the day
-            # TODO: this isn't tolerant to process restarts, so this
-            # flag should probably be saved on disk
+            # TODO: this isn't tolerant to process restarts
             done = now.strftime('%Y-%m-%d')
             logger.info(f'done for {done}')
+        if not clock.is_open:
+            logger.info(f'market not open bruh')
+        if done == now.strftime('%Y-%m-%d'):
+            logger.info(f'done for today')
 
         time.sleep(4)

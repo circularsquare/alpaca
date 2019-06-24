@@ -105,7 +105,7 @@ class SimulationAPI(object):
         ]
 
 
-def simulate(days=10, equity=500, position_size=100,
+def simulate(days=20, equity=10000, position_size=100,
              max_positions=5, bench='SPY'):
     '''
     equity: the initial dollar
@@ -146,5 +146,6 @@ def simulate(days=10, equity=500, position_size=100,
             account.fill_order(order, price, t)
 
         account.update(snapshot, t)
+        print(account.cash)
 
     return account
